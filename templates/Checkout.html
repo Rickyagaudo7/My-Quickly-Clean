@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quickly Clean</title>
+
+  <!-- Stripe.js Library -->
+  <script src="https://js.stripe.com/v3/"></script>
+
+  <!-- Link to your external CSS file -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+
+  <style>
+    /* Background image styling */
+    .background-image {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: url("{{ url_for('static', filename='background.png') }}") no-repeat center center fixed;
+      background-size: cover;
+      z-index: -1;
+    }
+
+    /* Header, Main Content, and Footer Styling */
+    .header {
+      background-color: #ff6f91;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: bold;
+    }
+
+    .header nav ul {
+      list-style-type: none;
+      padding: 0;
+      display: flex;
+    }
+
+    .header nav ul li {
+      display: inline-block;
+      margin: 0 2rem;
+    }
+
+    .header nav ul li a {
+      color: white;
+      text-decoration: none;
+      font-weight: bold;
+      font-size: 1.2rem;
+      transition: color 0.3s ease;
+    }
+
+    .header nav ul li a:hover {
+      color: #ffe0e6;
+    }
+
+    /* Cart Icon using Sprite Sheet */
+    .cart {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      background: url("{{ url_for('static', filename='sprite-sheet.png') }}") no-repeat;
+      background-position: 0 -40px;
+      cursor: pointer;
+    }
+
+    .cart-quantity {
+      background-color: #ff4d6d;
+      color: white;
+      border-radius: 50%;
+      padding: 0.2rem 0.6rem;
+      font-size: 0.9rem;
+      position: absolute;
+      top: -10px;
+      right: -10px;
+    }
+
+    /* Main Content Styling */
+    .main {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      position: relative;
+      z-index: 1;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Stripe Payment Form with Bubble Styling */
+    .payment-bubble {
+      background-color: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 10px;
+      margin-bottom: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    #card-element {
+      padding: 10px;
+      flex-grow: 1;
+      border: none;
+    }
+
+    #submit-button {
+      margin-top: 20px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+
+    #submit-button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    #card-errors {
+      color: red;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background Image -->
+  <div class="background-image"></div>
+
+  <!-- Header section -->
+  <header class="header">
+    <h1>Quickly Clean</h1>
+    <nav>
+      <ul>
+        <li><a href="{{ url_for('home') }}">Home</a></li>
+        {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('logout') }}" class="logout-button">Logout</a></li>
+        {% else %}
+          <li><a href="{{ url_for('register') }}">Register</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    <div class="cart" id="cart-icon">
+      <span class="cart-quantity" id="cart-quantity">0</span>
+    </div>
+  </header>
+
+  <!-- Main content area -->
+  <main class="main">
+    <div class="container">
+      <!-- Payment Form -->
+      <div class="payment-form">
+        <h3>Complete Payment</h3>
+        <form id="payment-form">
+          <div class="payment-bubble">
+            <label for="card-element">Card Number</label>
+            <div id="card-element"></div>
+          </div>
+          <div id="card-errors" role="alert"></div>
+          <button id="submit-button" type="submit">Pay Now</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <!-- Stripe Integration Script -->
+  <script>
+    const stripe = Stripe("pk_test_51SpJ9hQoTm7kBBw1mRMLKlCbA3ucA3E4LoBkcgiFQjwRHrLXSx6YQPTIuXpMz6f0arU0ymH4cFcVxNmZ5rtMvYxZ007vKB58iF");
+    const elements = stripe.elements();
+
+    const style = {
+      base: {
+        color: '#32325d',
+        fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+        fontSmoothing: 'antialiased',
+        fontSize: '16px',
+        '::placeholder': { color: '#aab7c4' }
+      },
+      invalid: {
+        color: '#fa755a',
+        iconColor: '#fa755a'
+      }
+    };
+
+    const card = elements.create('card', { style });
+    card.mount('#card-element');
+
+    card.on('change', event => {
+      const displayError = document.getElementById('card-errors');
+      displayError.textContent = event.error ? event.error.message : '';
+    });
+
+    const form = document.getElementById('payment-form');
+    const submitButton = document.getElementById('submit-button');
+
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      submitButton.disabled = true;
+
+      const {error, paymentIntent} = await stripe.confirmCardPayment("{{ client_secret }}", {
+        payment_method: {
+          card: card,
+        }
+      });
+
+      if (error) {
+        document.getElementById('card-errors').textContent = error.message;
+        submitButton.disabled = false;
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Payment succeeded, redirect to confirmation or dashboard
+        window.location.href = "{{ url_for('customer_dashboard') }}";
+      }
+    });
+  </script>
+</body>
+</html>

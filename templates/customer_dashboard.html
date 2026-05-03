@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Cleaning Requests - Quickly Clean</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+
+    .header {
+      background-color: #ff6f91;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+    }
+
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      max-width: 1300px;
+      margin: 30px auto;
+      gap: 20px;
+      padding: 20px;
+    }
+
+    .column {
+      flex: 1;
+      min-width: 300px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .notification {
+      border: 1px solid #ffc107;
+      background: #fff8e1;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+    }
+
+    .notification.unread {
+      background: #fff3cd;
+    }
+
+    .notification .badge {
+      float: right;
+      background-color: #ff6f91;
+      color: white;
+      padding: 2px 6px;
+      font-size: 0.7rem;
+      border-radius: 8px;
+    }
+
+    .request-card {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+      background: #fff;
+      position: relative;
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .request-title,
+    .edit-title {
+      font-size: 1.1rem;
+      font-weight: bold;
+      flex-grow: 1;
+      text-align: center;
+    }
+
+    .edit-title {
+      display: none;
+      padding: 6px;
+      font-size: 1.1rem;
+      text-align: center;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .icon {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    .delete-form {
+      display: none;
+    }
+
+    .delete-form button {
+      background: none;
+      border: none;
+      padding: 0;
+    }
+
+    .delete-form img {
+      width: 20px;
+      height: 20px;
+    }
+
+    .status-approved {
+      background-color: #d3f9df;
+      color: #0f5132;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 6px;
+      padding: 8px;
+      font-size: 1.2rem;
+      text-transform: uppercase;
+      margin-top: 10px;
+    }
+
+    .status-bar {
+      background-color: #e0f0ff;
+      border-left: 5px solid #2196F3;
+      padding: 10px;
+      font-weight: bold;
+      border-radius: 5px;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .preview {
+      max-width: 100%;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+
+    .flash {
+      background-color: #e7f3fe;
+      color: #31708f;
+      padding: 10px 15px;
+      border: 1px solid #bce8f1;
+      margin: 15px auto;
+      max-width: 800px;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .no-data {
+      color: #888;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>My Cleaning Requests</h1>
+    <a href="{{ url_for('home') }}" style="color: white; font-weight: bold; text-decoration: underline;">← Back to Home</a>
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <div class="dashboard">
+    <!-- LEFT -->
+    <div class="column">
+      <h2>Notifications & Declined</h2>
+      {% if notifications or (requests | selectattr("status", "equalto", "denied") | list) %}
+        <form action="{{ url_for('mark_notifications_read') }}" method="POST" style="text-align: right; margin-bottom: 10px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn">Mark All as Read</button>
+        </form>
+
+        {% for note in notifications %}
+          <div class="notification {% if note.status == 'unread' %}unread{% endif %}">
+            <strong>{{ note.message }}</strong>
+            <span class="badge">{% if note.status == 'unread' %}New{% else %}Read{% endif %}</span><br>
+            <small>{{ note.created_at.strftime('%b %d, %Y %I:%M %p') }}</small>
+          </div>
+        {% endfor %}
+
+        {% for request in requests if request.status == "denied" %}
+          <div class="request-card">
+            <div class="card-header"><h3>{{ request.service_type }}</h3></div>
+            <p><strong>Status:</strong> Denied</p>
+            <p><strong>Date:</strong> {{ request.date }} at {{ request.time }}</p>
+            <p><strong>Description:</strong> {{ request.description }}</p>
+            {% if request.photo_path %}
+              <img class="preview" src="{{ url_for('static', filename='uploads/' + request.photo_path) }}" alt="Photo">
+            {% endif %}
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-data">No new notifications or declined requests.</p>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT -->
+    <div class="column">
+      <h2>Approved & Pending Cleanings</h2>
+
+      {% for request in requests if request.status == "approved" %}
+        <div class="request-card" data-id="{{ request.id }}">
+          <div class="card-header">
+            <img src="{{ url_for('static', filename='icons/Gear.png') }}" class="icon toggle-edit" alt="Edit">
+            <span class="request-title">{{ request.service_type }}</span>
+            <input class="edit-title" type="text" value="{{ request.service_type }}">
+            <form action="{{ url_for('delete_request', request_id=request.id) }}" method="POST" class="delete-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" title="Delete">
+                <img src="{{ url_for('static', filename='icons/delete.png') }}" alt="Delete">
+              </button>
+            </form>
+          </div>
+
+          <div class="status-approved">APPROVED</div>
+          <p><strong>Date:</strong> {{ request.date }} at {{ request.time }}</p>
+          <p><strong>Description:</strong> {{ request.description }}</p>
+          {% if request.photo_path %}
+            <img class="preview" src="{{ url_for('static', filename='uploads/' + request.photo_path) }}" alt="Photo">
+          {% endif %}
+
+          <form action="{{ url_for('reorder_request', request_id=request.id) }}" method="POST" style="margin-top: 10px;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn" style="width: 100%;">Reorder</button>
+          </form>
+        </div>
+      {% endfor %}
+
+      {% for request in requests if request.status == "pending" %}
+        <div class="request-card">
+          <div class="card-header"><h3>{{ request.service_type }}</h3></div>
+          <div class="status-bar">✅ Request Submitted — Pending Approval</div>
+          <p><strong>Date:</strong> {{ request.date }} at {{ request.time }}</p>
+          <p><strong>Description:</strong> {{ request.description }}</p>
+          {% if request.photo_path %}
+            <img class="preview" src="{{ url_for('static', filename='uploads/' + request.photo_path) }}" alt="Photo">
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <script>
+    document.querySelectorAll(".toggle-edit").forEach(icon => {
+      icon.addEventListener("click", () => {
+        const card = icon.closest(".request-card");
+        const title = card.querySelector(".request-title");
+        const input = card.querySelector(".edit-title");
+        const deleteForm = card.querySelector(".delete-form");
+        const requestId = card.dataset.id;
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        const editing = input.style.display === "block";
+
+        if (editing) {
+          fetch(`/update-title/${requestId}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": csrfToken
+            },
+            body: `new_title=${encodeURIComponent(input.value)}`
+          }).then(() => {
+            title.textContent = input.value;
+            input.style.display = "none";
+            title.style.display = "inline";
+            deleteForm.style.display = "none";
+          });
+        } else {
+          title.style.display = "none";
+          input.style.display = "block";
+          deleteForm.style.display = "block";
+        }
+      });
+    });
+  </script>
+</body>
+</html>

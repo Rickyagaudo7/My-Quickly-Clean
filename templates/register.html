@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Register - Quickly Clean</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <style>
+    /* Background and header styling similar to home.html */
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+        Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background: #f7f7f7;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .main-background {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: url('/static/qcbg.png') no-repeat center center fixed;
+      background-size: cover;
+      z-index: -3;
+    }
+    .split-background {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      display: flex;
+      z-index: -2;
+    }
+    .half-bg {
+      flex: 1;
+      background-size: cover;
+      background-position: center;
+    }
+    #left-bg {
+      background-image: url('/static/theme1.png');
+    }
+    #right-bg {
+      background-image: url('/static/theme3.png');
+    }
+
+    header {
+      background-color: #ff6f91;
+      color: white;
+      padding: 1rem 2rem;
+      box-shadow: 0 2px 8px rgba(255, 111, 145, 0.3);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 3rem;
+      z-index: 10;
+      position: relative;
+    }
+    header h1 {
+      font-weight: 700;
+      font-size: 1.75rem;
+      margin: 0;
+    }
+    nav {
+      display: flex;
+      gap: 1.5rem;
+      font-weight: 600;
+      font-size: 1.05rem;
+    }
+    nav a {
+      color: white;
+      padding: 0.25rem 0.5rem;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+      text-decoration: none;
+    }
+    nav a:hover, nav a.active {
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+
+    main {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 3rem 1rem;
+      z-index: 1;
+      position: relative;
+    }
+    .form-container {
+      border-radius: 12px;
+      padding: 3rem 3.5rem;
+      max-width: 480px;
+      width: 100%;
+      box-shadow: none;
+      text-align: left;
+      backdrop-filter: saturate(180%) blur(16px);
+      -webkit-backdrop-filter: saturate(180%) blur(16px);
+      position: relative;
+      z-index: 2;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+      background: rgba(255, 255, 255, 0.15); /* changed from transparent to subtle translucent white */
+    }
+    .form-container:hover,
+    .form-container:focus-within {
+      background: rgba(255, 255, 255, 0.2);
+      box-shadow: none;
+    }
+
+    .form-container h2 {
+      margin-top: 0;
+      margin-bottom: 2rem;
+      font-weight: 700;
+      color: #ff6f91;
+      font-size: 2rem;
+      text-align: center;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+    }
+    label {
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+      color: #444;
+      font-size: 0.95rem;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="date"],
+    select,
+    textarea {
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      transition: border-color 0.3s ease, background-color 0.3s ease;
+      width: 100%;
+      font-family: inherit;
+      resize: vertical;
+      background-color: rgba(255, 255, 255, 0.3);
+    }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="date"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #ff6f91;
+      outline: none;
+      box-shadow: 0 0 8px rgba(255, 111, 145, 0.3);
+      background-color: rgba(255, 255, 255, 0.45);
+    }
+    textarea {
+      min-height: 80px;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+      position: relative;
+    }
+
+    .error-message {
+      color: #e02424;
+      font-size: 0.85rem;
+      margin-top: 0.3rem;
+      position: absolute;
+      bottom: -18px;
+      left: 0;
+      font-weight: 600;
+    }
+
+    .checkbox-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+      margin-bottom: 1.5rem;
+    }
+    .checkbox-group input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .checkbox-group label {
+      margin: 0;
+      cursor: pointer;
+    }
+
+    /* Employee password toggle */
+    #employee-password-group {
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+      overflow: hidden;
+    }
+
+    /* Button */
+    button[type="submit"] {
+      background-color: #ff6f91;
+      color: white;
+      border: none;
+      padding: 1rem 0;
+      font-size: 1.15rem;
+      font-weight: 700;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin-top: 0.5rem;
+      box-shadow: 0 6px 15px rgb(255 111 145 / 0.4);
+    }
+    button[type="submit"]:hover {
+      background-color: #e1485e;
+    }
+
+    /* Responsive */
+    @media (max-width: 520px) {
+      .form-container {
+        padding: 2rem 1.5rem;
+        margin: 0 1rem;
+      }
+      header {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      nav {
+        font-size: 1rem;
+      }
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem 0;
+      font-size: 0.9rem;
+      color: #777;
+      z-index: 1;
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+  <div class="main-background"></div>
+  <div class="split-background">
+    <div id="left-bg" class="half-bg"></div>
+    <div id="right-bg" class="half-bg"></div>
+  </div>
+
+  <header>
+    <h1>Quickly Clean</h1>
+    <nav>
+      <a href="{{ url_for('home') }}">Home</a>
+      <a href="{{ url_for('register') }}" class="active">Register</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="form-container">
+      <h2>Create Your Account</h2>
+      <form id="registration-form" method="POST" action="{{ url_for('register') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <!-- Username -->
+        <div class="form-group">
+          <label for="username">Username</label>
+          <input type="text" id="username" name="username" required />
+          <span id="username-error" class="error-message"></span>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input type="email" id="email" name="email" required />
+          <span id="email-error" class="error-message"></span>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required />
+          <span id="password-error" class="error-message"></span>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label for="confirm_password">Confirm Password</label>
+          <input type="password" id="confirm_password" name="confirm_password" required />
+          <span id="confirm-password-error" class="error-message"></span>
+        </div>
+
+        <!-- Role selection -->
+        <div class="form-group">
+          <label for="role">Register as</label>
+          <select id="role" name="role" required>
+            <option value="customer" selected>Customer</option>
+            <option value="employee">Employee</option>
+          </select>
+        </div>
+
+        <!-- Employee password -->
+        <div class="form-group" id="employee-password-group" style="max-height: 0; opacity: 0;">
+          <label for="employee_password">Employee Password</label>
+          <input type="password" id="employee_password" name="employee_password" readonly />
+          <span id="employee-password-error" class="error-message"></span>
+        </div>
+
+        <!-- Primary Address fields -->
+        <fieldset>
+          <legend>Primary Address</legend>
+          <div class="form-group">
+            <label for="street_address">Street Address</label>
+            <input type="text" id="street_address" name="street_address" required />
+            <span id="street-address-error" class="error-message"></span>
+          </div>
+          <div class="address-row" style="display:flex; gap:1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex:1 1 45%;">
+              <label for="city">City</label>
+              <input type="text" id="city" name="city" required />
+              <span id="city-error" class="error-message"></span>
+            </div>
+            <div class="form-group" style="flex:1 1 45%;">
+              <label for="state">State / Province</label>
+              <input type="text" id="state" name="state" required />
+              <span id="state-error" class="error-message"></span>
+            </div>
+          </div>
+          <div class="form-group" style="max-width: 150px;">
+            <label for="zipcode">Zip / Postal Code</label>
+            <input type="text" id="zipcode" name="zipcode" required />
+            <span id="zipcode-error" class="error-message"></span>
+          </div>
+        </fieldset>
+
+        <!-- Billing Address same or different -->
+        <div class="form-group">
+          <label for="billing_same">Is your billing address the same as your primary address?</label>
+          <select id="billing_same" name="billing_same" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes, use primary address</option>
+            <option value="no">No, I will enter a different billing address</option>
+          </select>
+          <span id="billing-same-error" class="error-message"></span>
+        </div>
+
+        <fieldset id="billing-address-group" style="display: none;">
+          <legend>Billing Address</legend>
+          <div class="form-group">
+            <label for="billing_street_address">Street Address</label>
+            <input type="text" id="billing_street_address" name="billing_street_address" />
+            <span id="billing-street-address-error" class="error-message"></span>
+          </div>
+          <div class="address-row" style="display:flex; gap:1rem; flex-wrap: wrap;">
+            <div class="form-group" style="flex:1 1 45%;">
+              <label for="billing_city">City</label>
+              <input type="text" id="billing_city" name="billing_city" />
+              <span id="billing-city-error" class="error-message"></span>
+            </div>
+            <div class="form-group" style="flex:1 1 45%;">
+              <label for="billing_state">State / Province</label>
+              <input type="text" id="billing_state" name="billing_state" />
+              <span id="billing-state-error" class="error-message"></span>
+            </div>
+          </div>
+          <div class="form-group" style="max-width: 150px;">
+            <label for="billing_zipcode">Zip / Postal Code</label>
+            <input type="text" id="billing_zipcode" name="billing_zipcode" />
+            <span id="billing-zipcode-error" class="error-message"></span>
+          </div>
+        </fieldset>
+
+        <!-- Save payment method dropdown -->
+        <div class="form-group">
+          <label for="save_payment">Save Payment Method?</label>
+          <select id="save_payment" name="save_payment" required>
+            <option value="" disabled selected>Select an option</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+          <span id="save-payment-error" class="error-message"></span>
+        </div>
+
+        <!-- Payment details simplified -->
+        <fieldset id="payment-details-container" style="display: none;">
+          <legend>Payment Details</legend>
+
+          <div class="form-group">
+            <label for="card_name">Name on Card</label>
+            <input type="text" id="card_name" name="card_name" />
+            <span id="card-name-error" class="error-message"></span>
+          </div>
+          <div class="form-group">
+            <label for="card_number">Card Number</label>
+            <input
+              type="text"
+              id="card_number"
+              name="card_number"
+              maxlength="19"
+              placeholder="1234 5678 9012 3456"
+            />
+            <span id="card-number-error" class="error-message"></span>
+          </div>
+          <div class="address-row" style="display:flex; gap:1rem;">
+            <div style="flex:1;">
+              <label for="card_expiry">Expiration Date (MM/YY)</label>
+              <input type="text" id="card_expiry" name="card_expiry" maxlength="5" placeholder="MM/YY" />
+              <span id="card-expiry-error" class="error-message"></span>
+            </div>
+            <div style="flex:1;">
+              <label for="card_cvv">CVV</label>
+              <input type="text" id="card_cvv" name="card_cvv" maxlength="4" placeholder="123" />
+              <span id="card-cvv-error" class="error-message"></span>
+            </div>
+          </div>
+        </fieldset>
+
+        <!-- Terms and Conditions -->
+        <div class="checkbox-group">
+          <input type="checkbox" id="terms" name="terms" required />
+          <label for="terms">
+            I agree to the <a href="#" target="_blank">terms and conditions</a>
+          </label>
+          <span id="terms-error" class="error-message"></span>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit">Register</button>
+      </form>
+    </div>
+  </main>
+
+  <footer>
+    &copy; 2025 Quickly Clean
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const roleSelect = document.getElementById('role');
+      const empPassGroup = document.getElementById('employee-password-group');
+      const empPassInput = document.getElementById('employee_password');
+      const billingSame = document.getElementById('billing_same');
+      const billingGroup = document.getElementById('billing-address-group');
+      const savePayment = document.getElementById('save_payment');
+      const paymentDetails = document.getElementById('payment-details-container');
+
+      function toggleEmployeePassword() {
+        if (roleSelect.value === 'employee') {
+          empPassGroup.style.maxHeight = '100px';
+          empPassGroup.style.opacity = '1';
+          empPassInput.required = true;
+          empPassInput.value = '123enr';
+          empPassInput.readOnly = true;
+        } else {
+          empPassGroup.style.maxHeight = '0';
+          empPassGroup.style.opacity = '0';
+          empPassInput.required = false;
+          empPassInput.value = '';
+          empPassInput.readOnly = false;
+        }
+      }
+
+      function toggleBillingAddress() {
+        if (billingSame.value === 'no') {
+          billingGroup.style.display = 'block';
+          billingGroup.querySelectorAll('input').forEach(input => input.required = true);
+        } else {
+          billingGroup.style.display = 'none';
+          billingGroup.querySelectorAll('input').forEach(input => {
+            input.required = false;
+            input.value = '';
+          });
+        }
+      }
+
+      function togglePaymentDetails() {
+        if (savePayment.value === 'yes') {
+          paymentDetails.style.display = 'block';
+          paymentDetails.querySelectorAll('input').forEach(input => input.required = true);
+        } else {
+          paymentDetails.style.display = 'none';
+          paymentDetails.querySelectorAll('input').forEach(input => {
+            input.required = false;
+            input.value = '';
+          });
+        }
+      }
+
+      roleSelect.addEventListener('change', toggleEmployeePassword);
+      billingSame.addEventListener('change', toggleBillingAddress);
+      savePayment.addEventListener('change', togglePaymentDetails);
+
+      // Initialize on page load
+      toggleEmployeePassword();
+      toggleBillingAddress();
+      togglePaymentDetails();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Handyman AI Chat</title>
+<style>
+  body { font-family: Arial, sans-serif; padding: 1rem; max-width: 600px; margin: auto; }
+  #chat-box { border: 1px solid #ccc; padding: 1rem; height: 400px; overflow-y: auto; white-space: pre-line; }
+  .message { margin: 0.5rem 0; }
+  .user { text-align: right; color: blue; }
+  .bot { text-align: left; color: green; }
+  input[type=text] { width: 80%; padding: 0.5rem; }
+  button { padding: 0.5rem; }
+</style>
+</head>
+<body>
+<h2>Handyman AI Chat</h2>
+<div id="chat-box">
+  {% for msg in chat_history %}
+    <div class="message user">{{ msg.user }}</div>
+    <div class="message bot">{{ msg.bot }}</div>
+  {% endfor %}
+</div>
+<form id="chat-form">
+  <input type="text" id="user-input" autocomplete="off" placeholder="What can we help you with?" />
+  <button type="submit">Send</button>
+</form>
+<script>
+  const chatBox = document.getElementById("chat-box");
+  const form = document.getElementById("chat-form");
+  const input = document.getElementById("user-input");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = input.value.trim();
+    if (!message) return;
+
+    // Show user message immediately
+    const userDiv = document.createElement("div");
+    userDiv.className = "message user";
+    userDiv.textContent = message;
+    chatBox.appendChild(userDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    input.value = "";
+
+    // Send message to backend
+    const res = await fetch("/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message }),
+    });
+    const data = await res.json();
+
+    // Show bot response
+    const botDiv = document.createElement("div");
+    botDiv.className = "message bot";
+    botDiv.textContent = data.response;
+    chatBox.appendChild(botDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+  });
+</script>
+</body>
+</html>
