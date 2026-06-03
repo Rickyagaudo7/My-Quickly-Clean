@@ -1,75 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quickly Clean</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-  <meta name="csrf-token" content="{{ csrf_token() }}">
-</head>
+{% extends "base.html" %}
 
-<body>
+{% block title %}Quickly Clean - Home{% endblock %}
 
+{% block extra_styles %}
+<meta name="csrf-token" content="{{ csrf_token() }}">
+{% endblock %}
+
+{% block content %}
   <div class="main-background"></div>
 
-  <div class="split-background">
-    <div id="left-bg" class="half-bg"></div>
-    <div id="right-bg" class="half-bg"></div>
-  </div>
-
-  <header class="header text-center mt-2">
-    <img src="{{ url_for('static', filename='icons/logo.png') }}" alt="Quickly Clean Logo">
-    <nav>
-      <ul>
-        <li><a href="{{ url_for('home') }}">Home</a></li>
-        {% if current_user.is_authenticated %}
-          {% if current_user.role in ['employee', 'admin'] %}
-            <li><a href="{{ url_for('employee_dashboard') }}">Dashboard</a></li>
-          {% else %}
-            <li><a href="{{ url_for('customer_dashboard') }}">My Requests</a></li>
-          {% endif %}
-          <li><a href="{{ url_for('logout') }}">Logout</a></li>
-        {% else %}
-          <li><a href="{{ url_for('register') }}">Register</a></li>
-        {% endif %}
-      </ul>
-    </nav>
-  </header>
-
   {% if not current_user.is_authenticated %}
-    <div class="container">
-      <h2>Login</h2>
-      <form method="POST" action="{{ url_for('login') }}">
+    <div class="container" style="max-width: 400px; margin: 2rem auto;">
+      <h2 class="text-center" style="margin-bottom: 1rem;">Login</h2>
+      <form method="POST" action="{{ url_for('login') }}" style="box-shadow: none; padding: 0; background: transparent; border: none; max-width: 100%;">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="email" name="email" placeholder="Email" required />
         <input type="password" name="password" placeholder="Password" required />
-        <button type="submit" class="btn">Login</button>
+        <button type="submit" class="btn full-width">Login</button>
       </form>
     </div>
   {% else %}
     <div class="container text-center">
-      <p>Welcome back, {{ current_user.username }}!</p>
+      <p style="font-size: 1.2rem; font-weight: bold;">Welcome back, {{ current_user.username }}!</p>
     </div>
   {% endif %}
 
   <div class="container">
     <h2>Step 1: Choose a Cleaning Category</h2>
 
-    <div class="text-center" style="position: relative;">
-      <button onclick="prevSlide()" class="btn" style="position: absolute; left: 0; top: 40%;">❮</button>
+    <div class="text-center" style="position: relative; margin: 1.5rem 0;">
+      <button onclick="prevSlide()" class="btn" style="position: absolute; left: 10px; top: 40%; z-index: 5;">❮</button>
       <img id="carousel-image" src="{{ url_for('static', filename='slide2.png') }}" alt="Cleaning Service">
-      <button onclick="nextSlide()" class="btn" style="position: absolute; right: 0; top: 40%;">❯</button>
+      <button onclick="nextSlide()" class="btn" style="position: absolute; right: 10px; top: 40%; z-index: 5;">❯</button>
     </div>
 
     <div id="dropdown-container" style="display: block; margin-top: 1.5rem;">
-      <div id="service-title" style="font-size: 1.3rem; font-weight: bold; margin-bottom: 0.5rem;"></div>
+      <div id="service-title" style="font-size: 1.3rem; font-weight: bold; margin-bottom: 0.5rem; text-align: center;"></div>
 
       <label for="service-option" style="font-weight: bold;">Pick a Signature Cleaning:</label>
-      <select id="service-option" name="service-option" onchange="toggleDetailsView()" required style="width: 100%; padding: 8px; margin-top: 0.5rem;">
+      <select id="service-option" name="service-option" onchange="toggleDetailsView()" required>
         <option value="" disabled selected>Select a cleaning</option>
       </select>
 
-      <div id="details-inputs" style="display: none; margin-top: 1rem; flex-direction: column; gap: 10px;">
+      <div id="details-inputs">
         <label style="font-weight: bold; margin-top: 0.5rem;">Upload Photo (Optional):</label>
         <input type="file" id="carousel-photo" accept="image/*" />
         
@@ -82,7 +55,7 @@
         <label style="font-weight: bold;">Special Instructions / Description:</label>
         <textarea id="carousel-description" placeholder="Describe areas to clean..."></textarea>
 
-        <button onclick="submitCarouselOption()" class="btn" style="margin-top: 1rem; display: block; width: 100%;">
+        <button onclick="submitCarouselOption()" class="btn btn-primary full-width">
           Submit Step 1 Booking
         </button>
       </div>
@@ -91,12 +64,10 @@
 
   <div class="container" id="step-2-tracker">
     <h2>Step 2: Track Your Cleanings</h2>
-
-    <div id="pending-requests">
+    <div id="pending-requests" style="margin-top: 1rem;">
       <h3>Pending Approval</h3>
       <div class="no-pending">No pending requests.</div>
     </div>
-
     <div id="approved-requests" style="margin-top: 2rem;">
       <h3>Upcoming Cleanings</h3>
       <div class="no-approved">No upcoming cleanings.</div>
@@ -105,16 +76,16 @@
 
   <div class="container">
     <h2>Extra Cleaning Options</h2>
-    <div class="service-row">
+    <div class="service-row" style="margin-top: 1rem;">
       <div class="service-item">
         <h3>Basic Cleaning ($50)</h3>
         <details>
-          <summary>Submit</summary>
-          <input type="file" id="basic-photo" />
+          <summary>Submit Custom Requirements</summary>
+          <input type="file" id="basic-photo" style="margin-top: 10px;" />
           <input type="date" id="basic-date" />
           <input type="time" id="basic-time" />
-          <textarea id="basic-description"></textarea>
-          <button onclick="submitQuickOption('Basic Cleaning', 50, 'basic-photo', 'basic-date', 'basic-time', 'basic-description')">
+          <textarea id="basic-description" placeholder="Notes..."></textarea>
+          <button class="btn full-width" onclick="submitQuickOption('Basic Cleaning', 50, 'basic-photo', 'basic-date', 'basic-time', 'basic-description')">
             Submit for Review
           </button>
         </details>
@@ -123,41 +94,25 @@
       <div class="service-item">
         <h3>Deep Cleaning ($150)</h3>
         <details>
-          <summary>Submit</summary>
-          <input type="file" id="deep-photo" />
+          <summary>Submit Custom Requirements</summary>
+          <input type="file" id="deep-photo" style="margin-top: 10px;" />
           <input type="date" id="deep-date" />
           <input type="time" id="deep-time" />
-          <textarea id="deep-description"></textarea>
-          <button onclick="submitQuickOption('Deep Cleaning', 150, 'deep-photo', 'deep-date', 'deep-time', 'deep-description')">
+          <textarea id="deep-description" placeholder="Notes..."></textarea>
+          <button class="btn full-width" onclick="submitQuickOption('Deep Cleaning', 150, 'deep-photo', 'deep-date', 'deep-time', 'deep-description')">
             Submit for Review
           </button>
         </details>
       </div>
     </div>
   </div>
+{% endblock %}
 
-  <footer class="footer">
-    <p>&copy; 2026 Quickly Clean. All rights reserved.</p>
-  </footer>
-
+{% block scripts %}
   <script>
     function getCSRFToken() {
       return document.querySelector('meta[name="csrf-token"]').getAttribute("content");
     }
-
-    /* ================= SPLIT BACKGROUND SLIDESHOW ================= */
-    const leftImages = ['theme1.png', 'theme2.png'];
-    const rightImages = ['theme3.png', 'theme4.png'];
-    let current = 0;
-
-    function updateSplitSlideshow() {
-      document.getElementById("left-bg").style.backgroundImage = `url('/static/${leftImages[current]}')`;
-      document.getElementById("right-bg").style.backgroundImage = `url('/static/${rightImages[current]}')`;
-      current = (current + 1) % leftImages.length;
-    }
-
-    setInterval(updateSplitSlideshow, 5000);
-    updateSplitSlideshow();
 
     /* ================= CAROUSEL ENGINE ================= */
     const slides = [
@@ -183,7 +138,6 @@
 
     function updateSlide() {
       const slide = slides[currentSlide];
-
       document.getElementById("carousel-image").src = "/static/" + slide.image;
       document.getElementById("service-title").innerText = slide.title;
 
@@ -197,9 +151,7 @@
         dropdown.appendChild(option);
       });
 
-      // Hide details form again when changing the category image slide
       document.getElementById("details-inputs").style.display = "none";
-
       const img = document.getElementById("carousel-image");
       img.classList.remove("bounce");
       void img.offsetWidth; 
@@ -216,50 +168,34 @@
       updateSlide();
     }
 
-    /* ================= AUTOMATIC DETAIL TOGGLE ================= */
     function toggleDetailsView() {
       const dropdown = document.getElementById("service-option");
       const detailsContainer = document.getElementById("details-inputs");
-      
-      // If a valid option is picked, change display container structure to flex layout
-      if (dropdown.selectedIndex > 0) {
-        detailsContainer.style.display = "flex";
-      } else {
-        detailsContainer.style.display = "none";
-      }
+      detailsContainer.style.display = dropdown.selectedIndex > 0 ? "flex" : "none";
     }
 
-    // Initialize application state
     updateSlide();
 
-    /* ================= BACKEND PHOTO UPLOAD ================= */
+    /* ================= ASYNC API POST HANDOFFS ================= */
     async function uploadPhoto(file) {
       const formData = new FormData();
       formData.append("file", file);
-
       const response = await fetch("/upload-photo", {
         method: "POST",
-        headers: {
-          "X-CSRFToken": getCSRFToken()
-        },
+        headers: { "X-CSRFToken": getCSRFToken() },
         body: formData
       });
-
       const result = await response.json();
       return result.success ? result.filename : "";
     }
 
-    /* ================= SUBMIT CAROUSEL (STEP 1) OPTIONS ================= */
     async function submitCarouselOption() {
       const dropdown = document.getElementById("service-option");
-      
       if (!dropdown.value || dropdown.selectedIndex === 0) {
         alert("Please select a specific signature cleaning layout option from Step 1.");
         return;
       }
-
       const selectedOption = JSON.parse(dropdown.value);
-      
       await submitQuickOption(
         selectedOption.name,
         selectedOption.price,
@@ -270,7 +206,6 @@
       );
     }
 
-    /* ================= SUBMIT CORE CLEANING SELECTION ================= */
     async function submitQuickOption(service, price, photoId, dateId, timeId, descId) {
       const fileInput = document.getElementById(photoId);
       const date = document.getElementById(dateId).value;
@@ -287,15 +222,7 @@
         photo = await uploadPhoto(fileInput.files[0]);
       }
 
-      const payload = [{
-        service,
-        price,
-        photo,
-        date,
-        time,
-        description
-      }];
-
+      const payload = [{ service, price, photo, date, time, description }];
       const res = await fetch("/submit-cleaning-request", {
         method: "POST",
         headers: {
@@ -306,34 +233,25 @@
       });
 
       const data = await res.json();
-      console.log("Response:", data);
-
       if (!res.ok) {
         alert(data.error || "Request configuration pipeline failed.");
       } else {
         alert("Request processed and submitted successfully!");
-        
-        // Optional form reset after successful backend handoff
         document.getElementById(dateId).value = "";
         document.getElementById(timeId).value = "";
         document.getElementById(descId).value = "";
         fileInput.value = "";
         document.getElementById("details-inputs").style.display = "none";
         document.getElementById("service-option").selectedIndex = 0;
-
-        if (typeof fetchLiveRequests === "function") {
-          fetchLiveRequests(); 
-        }
+        if (typeof fetchLiveRequests === "function") { fetchLiveRequests(); }
       }
     }
 
-    /* ================= FETCH LIVE REQUESTS SYSTEM ================= */
     async function fetchLiveRequests() {
       try {
         const res = await fetch("/api/my-requests");
         if (!res.ok) return;
         const data = await res.json();
-
         const pending = data.requests.filter(r => r.status === "pending");
         const approved = data.requests.filter(r => r.status === "approved");
 
@@ -351,10 +269,8 @@
               <div class="status-bar" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
                 <strong>${r.service_type}</strong><br>
                 ⏳ ${r.date} @ ${r.time}<br>
-                📝 ${r.description || "No description"}<br>
                 Status: Pending Approval
-              </div>
-            `;
+              </div>`;
           });
         }
 
@@ -367,8 +283,7 @@
                 <strong>${r.service_type}</strong><br>
                 ✅ ${r.date} @ ${r.time}<br>
                 🧼 Approved
-              </div>
-            `;
+              </div>`;
           });
         }
       } catch (err) {
@@ -380,5 +295,4 @@
       fetchLiveRequests();
     {% endif %}
   </script>
-</body>
-</html>
+{% endblock %}
