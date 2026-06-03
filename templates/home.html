@@ -6,101 +6,12 @@
   <title>Quickly Clean</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-
-  <style>
-    /* Bounce animation */
-    @keyframes bounce {
-      0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-      }
-      40% {
-        transform: translateY(-20px);
-      }
-      60% {
-        transform: translateY(-10px);
-      }
-    }
-
-    #carousel-image.bounce {
-      animation: bounce 1s ease;
-    }
-
-    /* Custom styles for the details toggle and inputs */
-    #dropdown-container {
-      max-width: 400px;
-      margin: 1rem auto;
-      text-align: left;
-    }
-
-    #details-inputs {
-      display: none;
-      margin-top: 1rem;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    #toggle-details-btn {
-      background-color: #28a745; /* Bootstrap green */
-      color: white;
-      border: none;
-      padding: 0.6rem 1.2rem;
-      font-size: 1rem;
-      cursor: pointer;
-      border-radius: 4px;
-      margin-top: 1rem;
-      width: 100%;
-      transition: background-color 0.3s ease;
-    }
-
-    #toggle-details-btn:hover {
-      background-color: #218838;
-    }
-
-    /* Green border for valid inputs */
-    select.valid,
-    textarea.valid {
-      border: 2px solid #28a745 !important;
-      background: linear-gradient(180deg, #eafff1, #d6f5e3);
-      box-shadow: inset 0 2px 6px rgba(40, 167, 69, 0.25), 0 0 0 4px rgba(40, 167, 69, 0.25);
-    }
-
-    /* Optional valid input styling for file, date, time */
-    input.valid {
-      border: 2px solid #28a745 !important;
-    }
-
-    .pay-milestone-btn {
-      background-color: #ff6f91;
-      border: none;
-      color: white;
-      padding: 0.4rem 0.8rem;
-      font-size: 0.9rem;
-      border-radius: 6px;
-      cursor: pointer;
-      margin-top: 0.5rem;
-      transition: background-color 0.3s ease;
-    }
-
-    .pay-milestone-btn:hover {
-      background-color: #e1485e;
-    }
-
-    /* Containers for pending and approved requests */
-    .status-bar, .status-approved {
-      background: #f0f0f0;
-      border-radius: 8px;
-      padding: 0.8rem 1rem;
-      margin-bottom: 0.75rem;
-      text-align: left;
-    }
-
-    .status-approved {
-      border: 2px solid #28a745;
-    }
-  </style>
 </head>
+
 <body>
+
   <div class="main-background"></div>
+
   <div class="split-background">
     <div id="left-bg" class="half-bg"></div>
     <div id="right-bg" class="half-bg"></div>
@@ -114,7 +25,7 @@
         {% if current_user.is_authenticated %}
           {% if current_user.role in ['employee', 'admin'] %}
             <li><a href="{{ url_for('employee_dashboard') }}">Dashboard</a></li>
-          {% elif current_user.role == 'customer' %}
+          {% else %}
             <li><a href="{{ url_for('customer_dashboard') }}">My Requests</a></li>
           {% endif %}
           <li><a href="{{ url_for('logout') }}">Logout</a></li>
@@ -141,47 +52,57 @@
     </div>
   {% endif %}
 
-  <!-- Step 1 -->
   <div class="container">
     <h2>Step 1: Choose a Cleaning Category</h2>
+
     <div class="text-center" style="position: relative;">
       <button onclick="prevSlide()" class="btn" style="position: absolute; left: 0; top: 40%;">❮</button>
       <img id="carousel-image" src="{{ url_for('static', filename='slide2.png') }}" alt="Cleaning Service">
       <button onclick="nextSlide()" class="btn" style="position: absolute; right: 0; top: 40%;">❯</button>
     </div>
 
-    <div id="dropdown-container" style="display: none;">
-      <div id="service-title"></div>
-      <label for="service-option">Pick a Signature Cleaning:</label>
-      <select id="service-option" name="service-option" required>
+    <div id="dropdown-container" style="display: block; margin-top: 1.5rem;">
+      <div id="service-title" style="font-size: 1.3rem; font-weight: bold; margin-bottom: 0.5rem;"></div>
+
+      <label for="service-option" style="font-weight: bold;">Pick a Signature Cleaning:</label>
+      <select id="service-option" name="service-option" onchange="toggleDetailsView()" required style="width: 100%; padding: 8px; margin-top: 0.5rem;">
         <option value="" disabled selected>Select a cleaning</option>
       </select>
 
-      <div id="details-inputs">
+      <div id="details-inputs" style="display: none; margin-top: 1rem; flex-direction: column; gap: 10px;">
+        <label style="font-weight: bold; margin-top: 0.5rem;">Upload Photo (Optional):</label>
         <input type="file" id="carousel-photo" accept="image/*" />
+        
+        <label style="font-weight: bold;">Select Date:</label>
         <input type="date" id="carousel-date" />
+        
+        <label style="font-weight: bold;">Select Time:</label>
         <input type="time" id="carousel-time" />
+        
+        <label style="font-weight: bold;">Special Instructions / Description:</label>
         <textarea id="carousel-description" placeholder="Describe areas to clean..."></textarea>
-      </div>
 
-      <button id="toggle-details-btn">Add Details</button>
+        <button onclick="submitCarouselOption()" class="btn" style="margin-top: 1rem; display: block; width: 100%;">
+          Submit Step 1 Booking
+        </button>
+      </div>
     </div>
   </div>
 
-  <!-- Step 2: Live Tracker -->
   <div class="container" id="step-2-tracker">
     <h2>Step 2: Track Your Cleanings</h2>
+
     <div id="pending-requests">
       <h3>Pending Approval</h3>
       <div class="no-pending">No pending requests.</div>
     </div>
+
     <div id="approved-requests" style="margin-top: 2rem;">
       <h3>Upcoming Cleanings</h3>
       <div class="no-approved">No upcoming cleanings.</div>
     </div>
   </div>
 
-  <!-- Extras -->
   <div class="container">
     <h2>Extra Cleaning Options</h2>
     <div class="service-row">
@@ -189,54 +110,42 @@
         <h3>Basic Cleaning ($50)</h3>
         <details>
           <summary>Submit</summary>
-          <input type="file" id="basic-photo" accept="image/*" />
+          <input type="file" id="basic-photo" />
           <input type="date" id="basic-date" />
           <input type="time" id="basic-time" />
-          <textarea id="basic-description" placeholder="Describe areas to clean..."></textarea>
-          <button onclick="submitQuickOption('Basic Cleaning', 50, 'basic-photo', 'basic-date', 'basic-time', 'basic-description')" class="btn-primary">Submit for Review</button>
+          <textarea id="basic-description"></textarea>
+          <button onclick="submitQuickOption('Basic Cleaning', 50, 'basic-photo', 'basic-date', 'basic-time', 'basic-description')">
+            Submit for Review
+          </button>
         </details>
       </div>
+
       <div class="service-item">
         <h3>Deep Cleaning ($150)</h3>
         <details>
           <summary>Submit</summary>
-          <input type="file" id="deep-photo" accept="image/*" />
+          <input type="file" id="deep-photo" />
           <input type="date" id="deep-date" />
           <input type="time" id="deep-time" />
-          <textarea id="deep-description" placeholder="Describe areas to clean..."></textarea>
-          <button onclick="submitQuickOption('Deep Cleaning', 150, 'deep-photo', 'deep-date', 'deep-time', 'deep-description')" class="btn-primary">Submit for Review</button>
-        </details>
-      </div>
-      <div class="service-item">
-        <h3>Industrial Cleaning ($250)</h3>
-        <details>
-          <summary>Submit</summary>
-          <input type="file" id="industrial-photo" accept="image/*" />
-          <input type="date" id="industrial-date" />
-          <input type="time" id="industrial-time" />
-          <textarea id="industrial-description" placeholder="Describe areas to clean..."></textarea>
-          <button onclick="submitQuickOption('Industrial Cleaning', 250, 'industrial-photo', 'industrial-date', 'industrial-time', 'industrial-description')" class="btn-primary">Submit for Review</button>
-        </details>
-      </div>
-      <div class="service-item">
-        <h3>Contract Work ($500)</h3>
-        <details>
-          <summary>Submit</summary>
-          <input type="file" id="contract-photo" accept="image/*" />
-          <input type="date" id="contract-date" />
-          <input type="time" id="contract-time" />
-          <textarea id="contract-description" placeholder="Describe areas to clean..."></textarea>
-          <button onclick="submitQuickOption('Contract Work', 500, 'contract-photo', 'contract-date', 'contract-time', 'contract-description')" class="btn-primary">Submit for Review</button>
+          <textarea id="deep-description"></textarea>
+          <button onclick="submitQuickOption('Deep Cleaning', 150, 'deep-photo', 'deep-date', 'deep-time', 'deep-description')">
+            Submit for Review
+          </button>
         </details>
       </div>
     </div>
   </div>
 
   <footer class="footer">
-    <p>&copy; 2025 Quickly Clean. All rights reserved.</p>
+    <p>&copy; 2026 Quickly Clean. All rights reserved.</p>
   </footer>
 
   <script>
+    function getCSRFToken() {
+      return document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+    }
+
+    /* ================= SPLIT BACKGROUND SLIDESHOW ================= */
     const leftImages = ['theme1.png', 'theme2.png'];
     const rightImages = ['theme3.png', 'theme4.png'];
     let current = 0;
@@ -250,37 +159,51 @@
     setInterval(updateSplitSlideshow, 5000);
     updateSplitSlideshow();
 
+    /* ================= CAROUSEL ENGINE ================= */
     const slides = [
-      { image: "slide2.png", title: "Home Cleaning", options: [{ name: "Deep Clean", price: 130 }, { name: "Quick Tidy", price: 60 }] },
-      { image: "slide1.png", title: "Carpet Cleaning", options: [{ name: "Deep Clean", price: 150 }, { name: "Speed Clean", price: 80 }] },
-      { image: "slide3.png", title: "Pool Cleaning", options: [{ name: "Full Pool Clean", price: 180 }, { name: "Skim Only", price: 90 }] },
-      { image: "slide4.png", title: "Garage Cleaning", options: [{ name: "Deep Clean", price: 120 }, { name: "Quick Sweep", price: 70 }] },
-      { image: "slide5.png", title: "Window Cleaning", options: [{ name: "Inside/Out", price: 100 }, { name: "Outside Only", price: 60 }] }
+      { 
+        image: "slide2.png", 
+        title: "Home Cleaning", 
+        options: [
+          { name: "Basic Cleaning", price: 50 },
+          { name: "Deep Clean", price: 130 },
+          { name: "Deep Cleaning (Premium)", price: 150 }
+        ] 
+      },
+      { 
+        image: "slide1.png", 
+        title: "Carpet Cleaning", 
+        options: [
+          { name: "Deep Clean", price: 150 }
+        ] 
+      },
     ];
 
     let currentSlide = 0;
 
     function updateSlide() {
       const slide = slides[currentSlide];
-      const carouselImage = document.getElementById("carousel-image");
-      carouselImage.src = "/static/" + slide.image;
+
+      document.getElementById("carousel-image").src = "/static/" + slide.image;
       document.getElementById("service-title").innerText = slide.title;
+
       const dropdown = document.getElementById("service-option");
-      dropdown.innerHTML = '<option value="" disabled selected>Select a cleaning</option>';
+      dropdown.innerHTML = '<option disabled selected>Select a cleaning</option>';
+
       slide.options.forEach(opt => {
         const option = document.createElement("option");
         option.value = JSON.stringify(opt);
         option.innerText = `${opt.name} - $${opt.price}`;
         dropdown.appendChild(option);
       });
-      document.getElementById("dropdown-container").style.display = "block";
 
-      dropdown.classList.remove('valid');
-      document.getElementById('carousel-description').classList.remove('valid');
+      // Hide details form again when changing the category image slide
+      document.getElementById("details-inputs").style.display = "none";
 
-      carouselImage.classList.remove("bounce");
-      void carouselImage.offsetWidth; // trigger reflow to restart animation
-      carouselImage.classList.add("bounce");
+      const img = document.getElementById("carousel-image");
+      img.classList.remove("bounce");
+      void img.offsetWidth; 
+      img.classList.add("bounce");
     }
 
     function nextSlide() {
@@ -293,105 +216,79 @@
       updateSlide();
     }
 
+    /* ================= AUTOMATIC DETAIL TOGGLE ================= */
+    function toggleDetailsView() {
+      const dropdown = document.getElementById("service-option");
+      const detailsContainer = document.getElementById("details-inputs");
+      
+      // If a valid option is picked, change display container structure to flex layout
+      if (dropdown.selectedIndex > 0) {
+        detailsContainer.style.display = "flex";
+      } else {
+        detailsContainer.style.display = "none";
+      }
+    }
+
+    // Initialize application state
+    updateSlide();
+
+    /* ================= BACKEND PHOTO UPLOAD ================= */
     async function uploadPhoto(file) {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch("/upload-photo", { method: "POST", body: formData });
-      const result = await response.json();
-      return result.success ? result.filename : null;
-    }
 
-    async function submitForReview() {
-      const slide = slides[currentSlide];
-      const selected = JSON.parse(document.getElementById("service-option").value);
-      const photoInput = document.getElementById("carousel-photo");
-      const date = document.getElementById("carousel-date").value.trim();
-      const time = document.getElementById("carousel-time").value.trim();
-      const description = document.getElementById("carousel-description").value.trim();
-
-      if (!date) {
-        alert("Please select a date before submitting.");
-        return;
-      }
-      if (!time) {
-        alert("Please select a time before submitting.");
-        return;
-      }
-      if (!description) {
-        alert("Please enter a description before submitting.");
-        return;
-      }
-      if (!document.getElementById("service-option").value) {
-        alert("Please select a signature cleaning before submitting.");
-        return;
-      }
-
-      let photo = "";
-      if (photoInput.files.length > 0) {
-        photo = await uploadPhoto(photoInput.files[0]);
-        if (!photo) return alert("Photo upload failed.");
-      }
-
-      const payload = [{
-        service: `${slide.title} - ${selected.name}`,
-        price: selected.price,
-        photo,
-        date,
-        time,
-        description
-      }];
-
-      await fetch("{{ url_for('submit_cleaning_request') }}", {
+      const response = await fetch("/upload-photo", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
+          "X-CSRFToken": getCSRFToken()
         },
-        body: JSON.stringify({ cart: payload })
+        body: formData
       });
 
-      alert("Request submitted!");
-      fetchLiveRequests();
-
-      toggleDetails(false);
-
-      photoInput.value = "";
-      document.getElementById("carousel-date").value = "";
-      document.getElementById("carousel-time").value = "";
-      document.getElementById("carousel-description").value = "";
-      document.getElementById("service-option").value = "";
-
-      document.getElementById("service-option").classList.remove('valid');
-      document.getElementById("carousel-description").classList.remove('valid');
+      const result = await response.json();
+      return result.success ? result.filename : "";
     }
 
-    async function submitQuickOption(name, price, photoId, dateId, timeId, descId) {
-      const photoInput = document.getElementById(photoId);
-      const date = document.getElementById(dateId).value.trim();
-      const time = document.getElementById(timeId).value.trim();
-      const description = document.getElementById(descId).value.trim();
+    /* ================= SUBMIT CAROUSEL (STEP 1) OPTIONS ================= */
+    async function submitCarouselOption() {
+      const dropdown = document.getElementById("service-option");
+      
+      if (!dropdown.value || dropdown.selectedIndex === 0) {
+        alert("Please select a specific signature cleaning layout option from Step 1.");
+        return;
+      }
 
-      if (!date) {
-        alert("Please select a date before submitting.");
-        return;
-      }
-      if (!time) {
-        alert("Please select a time before submitting.");
-        return;
-      }
-      if (!description) {
-        alert("Please enter a description before submitting.");
+      const selectedOption = JSON.parse(dropdown.value);
+      
+      await submitQuickOption(
+        selectedOption.name,
+        selectedOption.price,
+        'carousel-photo',
+        'carousel-date',
+        'carousel-time',
+        'carousel-description'
+      );
+    }
+
+    /* ================= SUBMIT CORE CLEANING SELECTION ================= */
+    async function submitQuickOption(service, price, photoId, dateId, timeId, descId) {
+      const fileInput = document.getElementById(photoId);
+      const date = document.getElementById(dateId).value;
+      const time = document.getElementById(timeId).value;
+      const description = document.getElementById(descId).value;
+
+      if (!date || !time || !description) {
+        alert("Please fill in all layout details (Date, Time, Description) before saving.");
         return;
       }
 
       let photo = "";
-      if (photoInput.files.length > 0) {
-        photo = await uploadPhoto(photoInput.files[0]);
-        if (!photo) return alert("Photo upload failed.");
+      if (fileInput.files.length > 0) {
+        photo = await uploadPhoto(fileInput.files[0]);
       }
 
       const payload = [{
-        service: name,
+        service,
         price,
         photo,
         date,
@@ -399,119 +296,89 @@
         description
       }];
 
-      await fetch("{{ url_for('submit_cleaning_request') }}", {
+      const res = await fetch("/submit-cleaning-request", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-CSRFToken": document.querySelector('meta[name="csrf-token"]').content
+          "X-CSRFToken": getCSRFToken()
         },
         body: JSON.stringify({ cart: payload })
       });
 
-      alert("Request submitted!");
-      fetchLiveRequests();
+      const data = await res.json();
+      console.log("Response:", data);
 
-      photoInput.value = "";
-      document.getElementById(dateId).value = "";
-      document.getElementById(timeId).value = "";
-      document.getElementById(descId).value = "";
-    }
-
-    async function fetchLiveRequests() {
-      const response = await fetch("/api/my-requests");
-      const data = await response.json();
-
-      const pending = data.requests.filter(r => r.status === "pending");
-      const approved = data.requests.filter(r => r.status === "approved");
-
-      const pendingContainer = document.getElementById("pending-requests");
-      const approvedContainer = document.getElementById("approved-requests");
-
-      pendingContainer.innerHTML = "<h3>Pending Approval</h3>";
-      approvedContainer.innerHTML = "<h3>Upcoming Cleanings</h3>";
-
-      if (pending.length === 0) {
-        pendingContainer.innerHTML += "<div class='no-pending'>No pending requests.</div>";
+      if (!res.ok) {
+        alert(data.error || "Request configuration pipeline failed.");
       } else {
-        pending.forEach(r => {
-          pendingContainer.innerHTML += `<div class="status-bar">✅ ${r.service_type} — Pending<br><small>${r.date} @ ${r.time}</small></div>`;
-        });
-      }
+        alert("Request processed and submitted successfully!");
+        
+        // Optional form reset after successful backend handoff
+        document.getElementById(dateId).value = "";
+        document.getElementById(timeId).value = "";
+        document.getElementById(descId).value = "";
+        fileInput.value = "";
+        document.getElementById("details-inputs").style.display = "none";
+        document.getElementById("service-option").selectedIndex = 0;
 
-      if (approved.length === 0) {
-        approvedContainer.innerHTML += "<div class='no-approved'>No upcoming cleanings.</div>";
-      } else {
-        approved.forEach(r => {
-          approvedContainer.innerHTML += `
-            <div class="status-approved">
-              🧼 ${r.service_type} — Approved<br><small>${r.date} @ ${r.time}</small><br>
-              <button class="pay-milestone-btn" data-request-id="${r.id}">Pay Milestone</button>
-            </div>
-          `;
-        });
-
-        // Attach event listeners to Pay Milestone buttons
-        document.querySelectorAll('.pay-milestone-btn').forEach(button => {
-          button.addEventListener('click', () => {
-            const requestId = button.getAttribute('data-request-id');
-            window.location.href = `/payment?request_id=${requestId}`;
-          });
-        });
-      }
-    }
-
-    // Toggle function to show/hide details inputs and update button text
-    function toggleDetails(show) {
-      const inputs = document.getElementById('details-inputs');
-      const btn = document.getElementById('toggle-details-btn');
-      if (show) {
-        inputs.style.display = 'flex';
-        btn.textContent = 'Submit';
-      } else {
-        inputs.style.display = 'none';
-        btn.textContent = 'Add Details';
-      }
-    }
-
-    // Add valid class toggle to keep green border after input for date/time/file inputs and the new dropdown and textarea
-    function setupValidToggle(input) {
-      if (!input) return;
-      function toggleValid() {
-        if (input.value && input.value.trim() !== '') input.classList.add('valid');
-        else input.classList.remove('valid');
-      }
-      input.addEventListener('change', toggleValid);
-      input.addEventListener('input', toggleValid);
-      toggleValid();
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      updateSlide();
-      fetchLiveRequests();
-
-      const toggleBtn = document.getElementById('toggle-details-btn');
-      toggleBtn.addEventListener('click', async () => {
-        const inputs = document.getElementById('details-inputs');
-        if (inputs.style.display === 'flex') {
-          await submitForReview();
-        } else {
-          toggleDetails(true);
+        if (typeof fetchLiveRequests === "function") {
+          fetchLiveRequests(); 
         }
-      });
+      }
+    }
 
-      setupValidToggle(document.getElementById('carousel-date'));
-      setupValidToggle(document.getElementById('carousel-time'));
-      setupValidToggle(document.getElementById('carousel-photo'));
-      setupValidToggle(document.getElementById('service-option'));
-      setupValidToggle(document.getElementById('carousel-description'));
+    /* ================= FETCH LIVE REQUESTS SYSTEM ================= */
+    async function fetchLiveRequests() {
+      try {
+        const res = await fetch("/api/my-requests");
+        if (!res.ok) return;
+        const data = await res.json();
 
-      ['basic-date', 'basic-time', 'basic-photo',
-       'deep-date', 'deep-time', 'deep-photo',
-       'industrial-date', 'industrial-time', 'industrial-photo',
-       'contract-date', 'contract-time', 'contract-photo'].forEach(id => {
-         setupValidToggle(document.getElementById(id));
-       });
-    });
+        const pending = data.requests.filter(r => r.status === "pending");
+        const approved = data.requests.filter(r => r.status === "approved");
+
+        const pendingDiv = document.getElementById("pending-requests");
+        const approvedDiv = document.getElementById("approved-requests");
+
+        pendingDiv.innerHTML = "<h3>Pending Approval</h3>";
+        approvedDiv.innerHTML = "<h3>Upcoming Cleanings</h3>";
+
+        if (pending.length === 0) {
+          pendingDiv.innerHTML += "<div class='no-pending'>No pending requests.</div>";
+        } else {
+          pending.forEach(r => {
+            pendingDiv.innerHTML += `
+              <div class="status-bar" style="border: 1px solid #ccc; padding: 10px; margin-bottom: 5px;">
+                <strong>${r.service_type}</strong><br>
+                ⏳ ${r.date} @ ${r.time}<br>
+                📝 ${r.description || "No description"}<br>
+                Status: Pending Approval
+              </div>
+            `;
+          });
+        }
+
+        if (approved.length === 0) {
+          approvedDiv.innerHTML += "<div class='no-approved'>No upcoming cleanings.</div>";
+        } else {
+          approved.forEach(r => {
+            approvedDiv.innerHTML += `
+              <div class="status-approved" style="border: 1px solid green; padding: 10px; margin-bottom: 5px;">
+                <strong>${r.service_type}</strong><br>
+                ✅ ${r.date} @ ${r.time}<br>
+                🧼 Approved
+              </div>
+            `;
+          });
+        }
+      } catch (err) {
+        console.error("Error fetching requests container values:", err);
+      }
+    }
+
+    {% if current_user.is_authenticated %}
+      fetchLiveRequests();
+    {% endif %}
   </script>
 </body>
 </html>

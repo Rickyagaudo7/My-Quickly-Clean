@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Quickly Clean</title>
+  <title>Quickly Clean - Checkout</title>
 
-  <!-- Stripe.js Library -->
   <script src="https://js.stripe.com/v3/"></script>
 
-  <!-- Link to your external CSS file -->
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
 
   <style>
@@ -64,27 +62,6 @@
       color: #ffe0e6;
     }
 
-    /* Cart Icon using Sprite Sheet */
-    .cart {
-      position: relative;
-      width: 40px;
-      height: 40px;
-      background: url("{{ url_for('static', filename='sprite-sheet.png') }}") no-repeat;
-      background-position: 0 -40px;
-      cursor: pointer;
-    }
-
-    .cart-quantity {
-      background-color: #ff4d6d;
-      color: white;
-      border-radius: 50%;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.9rem;
-      position: absolute;
-      top: -10px;
-      right: -10px;
-    }
-
     /* Main Content Styling */
     .main {
       display: flex;
@@ -96,12 +73,44 @@
     }
 
     .container {
-      max-width: 800px;
+      max-width: 600px;
       width: 100%;
       background-color: white;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      padding: 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Job Pricing Card Styling */
+    .order-summary-card {
+      background-color: #fff0f3;
+      border: 1px solid #ffccd5;
+      border-radius: 8px;
+      padding: 1.2rem;
+      margin-bottom: 2rem;
+    }
+
+    .order-summary-card h4 {
+      margin-top: 0;
+      color: #ff4d6d;
+    }
+
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 1rem;
+    }
+
+    .summary-total {
+      display: flex;
+      justify-content: space-between;
+      font-weight: bold;
+      font-size: 1.2rem;
+      border-top: 1px dashed #ffccd5;
+      padding-top: 0.8rem;
+      margin-top: 0.8rem;
+      color: #333;
     }
 
     /* Stripe Payment Form with Bubble Styling */
@@ -109,28 +118,39 @@
       background-color: #f9f9f9;
       border: 1px solid #ccc;
       border-radius: 8px;
-      padding: 10px;
+      padding: 15px;
       margin-bottom: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    }
+
+    .payment-bubble label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #555;
     }
 
     #card-element {
       padding: 10px;
-      flex-grow: 1;
-      border: none;
+      background: white;
+      border: 1px solid #ddd;
+      border-radius: 4px;
     }
 
     #submit-button {
-      margin-top: 20px;
+      width: 100%;
       background-color: #4CAF50;
       color: white;
       border: none;
-      padding: 10px;
-      font-size: 16px;
+      padding: 12px;
+      font-size: 18px;
+      font-weight: bold;
       cursor: pointer;
-      border-radius: 5px;
+      border-radius: 6px;
+      transition: background 0.2s ease;
+    }
+
+    #submit-button:hover {
+      background-color: #45a049;
     }
 
     #submit-button:disabled {
@@ -139,99 +159,154 @@
     }
 
     #card-errors {
-      color: red;
+      color: #fa755a;
       margin-top: 10px;
+      font-weight: 500;
     }
   </style>
 </head>
 <body>
-  <!-- Background Image -->
   <div class="background-image"></div>
 
-  <!-- Header section -->
   <header class="header">
     <h1>Quickly Clean</h1>
     <nav>
       <ul>
         <li><a href="{{ url_for('home') }}">Home</a></li>
         {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('customer_dashboard') }}">Dashboard</a></li>
           <li><a href="{{ url_for('logout') }}" class="logout-button">Logout</a></li>
         {% else %}
           <li><a href="{{ url_for('register') }}">Register</a></li>
         {% endif %}
       </ul>
     </nav>
-    <div class="cart" id="cart-icon">
-      <span class="cart-quantity" id="cart-quantity">0</span>
-    </div>
   </header>
 
-  <!-- Main content area -->
   <main class="main">
     <div class="container">
-      <!-- Payment Form -->
+      
+      <div class="order-summary-card">
+        <h4>Order Summary</h4>
+        <div class="summary-row">
+          <span><strong>Service Type:</strong></span>
+          <span>{{ cleaning_request.service_type }}</span>
+        </div>
+        <div class="summary-row">
+          <span><strong>Scheduled Date:</strong></span>
+          <span>{{ cleaning_request.date }} @ {{ cleaning_request.time }}</span>
+        </div>
+        <div class="summary-total">
+          <span>Amount Due:</span>
+          <span>${{ "%.2f"|format(cleaning_request.price) }}</span>
+        </div>
+      </div>
+
       <div class="payment-form">
-        <h3>Complete Payment</h3>
+        <h3>Complete Secure Settlement</h3>
         <form id="payment-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          
           <div class="payment-bubble">
-            <label for="card-element">Card Number</label>
+            <label for="card-element">Credit or Debit Card</label>
             <div id="card-element"></div>
           </div>
           <div id="card-errors" role="alert"></div>
+          
           <button id="submit-button" type="submit">Pay Now</button>
         </form>
       </div>
+
     </div>
   </main>
 
-  <!-- Stripe Integration Script -->
   <script>
-    const stripe = Stripe("pk_test_51SpJ9hQoTm7kBBw1mRMLKlCbA3ucA3E4LoBkcgiFQjwRHrLXSx6YQPTIuXpMz6f0arU0ymH4cFcVxNmZ5rtMvYxZ007vKB58iF");
-    const elements = stripe.elements();
-
-    const style = {
-      base: {
-        color: '#32325d',
-        fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
-        fontSmoothing: 'antialiased',
-        fontSize: '16px',
-        '::placeholder': { color: '#aab7c4' }
-      },
-      invalid: {
-        color: '#fa755a',
-        iconColor: '#fa755a'
-      }
-    };
-
-    const card = elements.create('card', { style });
-    card.mount('#card-element');
-
-    card.on('change', event => {
-      const displayError = document.getElementById('card-errors');
-      displayError.textContent = event.error ? event.error.message : '';
-    });
-
+    // Dynamically initialization via Flask config credentials parameters
+    const stripe = Stripe("{{ stripe_public_key }}");
     const form = document.getElementById('payment-form');
     const submitButton = document.getElementById('submit-button');
+    const displayError = document.getElementById('card-errors');
+    
+    let elements;
+    let card;
 
-    form.addEventListener('submit', async (event) => {
+    // Async block initializing secure elements session channel
+    async function initializeStripePay() {
+      // Create payment intent asynchronously straight via our API route engine endpoint
+      const response = await fetch("/create-payment-intent", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRFToken": "{{ csrf_token() }}"
+        },
+        body: JSON.stringify({ request_id: "{{ cleaning_request.id }}" }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.error) {
+        displayError.textContent = data.error;
+        submitButton.disabled = true;
+        return;
+      }
+
+      elements = stripe.elements();
+
+      const style = {
+        base: {
+          color: '#32325d',
+          fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+          fontSmoothing: 'antialiased',
+          fontSize: '16px',
+          '::placeholder': { color: '#aab7c4' }
+        },
+        invalid: {
+          color: '#fa755a',
+          iconColor: '#fa755a'
+        }
+      };
+
+      card = elements.create('card', { style });
+      card.mount('#card-element');
+
+      card.on('change', event => {
+        displayError.textContent = event.error ? event.error.message : '';
+      });
+
+      // Bind the form submission handler after initializing
+      form.addEventListener('submit', (e) => handlePaymentSubmission(e, data.clientSecret));
+    }
+
+    async function handlePaymentSubmission(event, clientSecret) {
       event.preventDefault();
       submitButton.disabled = true;
 
-      const {error, paymentIntent} = await stripe.confirmCardPayment("{{ client_secret }}", {
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
         payment_method: {
           card: card,
         }
       });
 
       if (error) {
-        document.getElementById('card-errors').textContent = error.message;
+        displayError.textContent = error.message;
         submitButton.disabled = false;
       } else if (paymentIntent && paymentIntent.status === 'succeeded') {
-        // Payment succeeded, redirect to confirmation or dashboard
+        // Transition state automatically over to paid via standard API channel hooks
+        await fetch(`/api/update-dispatch-status/${"{{ cleaning_request.id }}"}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token() }}"
+          },
+          body: JSON.stringify({ status: "paid" })
+        });
+
         window.location.href = "{{ url_for('customer_dashboard') }}";
       }
-    });
+    }
+
+    // Trigger orchestration routine load hook loops
+    initializeStripePay();
   </script>
 </body>
 </html>

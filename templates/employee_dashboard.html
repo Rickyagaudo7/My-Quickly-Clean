@@ -3,199 +3,298 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Employee Dashboard</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-
+  <title>Employee Management Dashboard - Quickly Clean</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f7f4f4;
-      color: #333;
+      background: #f7f7f7;
       margin: 0;
       padding: 0;
     }
 
     .header {
-      background-color: #ff6f91;
+      background-color: #2b2d42;
       color: white;
-      padding: 1rem;
       text-align: center;
+      padding: 1rem;
     }
 
-    nav a {
-      color: white;
-      text-decoration: none;
-      margin: 0 1rem;
-      font-weight: bold;
+    /* FIX: Force left/right alignment and prevent centering artifacts */
+    .dashboard {
+      display: flex;
+      flex-direction: row;
+      justify-content: flex-start;
+      align-items: flex-start;
+      max-width: 1400px;
+      margin: 30px auto;
+      gap: 24px;
+      padding: 0 20px;
     }
 
-    nav a:hover {
-      text-decoration: underline;
+    /* LEFT: Needs a dominant workspace area */
+    .column-left {
+      flex: 3;
+      min-width: 450px;
+      background: white;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
     }
 
-    .container {
-      max-width: 1200px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* RIGHT: Aligns completely right and holds tracking lists */
+    .column-right {
+      flex: 2;
+      min-width: 380px;
+      background: white;
+      padding: 24px;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.06);
     }
 
-    table {
+    .request-card {
+      border: 1px solid #eef2f5;
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 20px;
+      background: #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    /* Deep tracking grid metrics */
+    .tracking-data-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 2rem;
+      margin: 12px 0;
+      font-size: 0.85rem;
     }
 
-    table, th, td {
-      border: 1px solid #ddd;
+    .tracking-data-table td {
+      padding: 6px 0;
+      border-bottom: 1px dashed #f0f0f0;
+      color: #4a5568;
     }
 
-    th, td {
-      padding: 1rem;
-      text-align: center;
-      vertical-align: middle;
+    .tracking-data-table td.label {
+      font-weight: bold;
+      color: #718096;
+      width: 40%;
     }
 
-    th {
-      background-color: #ff6f91;
-      color: white;
-    }
-
-    .status-pending { color: #ff6f91; font-weight: bold; }
-    .status-completed { color: #4caf50; font-weight: bold; }
-    .status-denied { color: #f44336; font-weight: bold; }
-
-    .btn {
-      background-color: #ff6f91;
-      color: white;
-      padding: 0.5rem 1rem;
-      border: none;
+    .meta-info {
+      font-size: 0.8rem;
+      color: #4f46e5;
+      background: #e0e7ff;
+      padding: 4px 8px;
       border-radius: 4px;
+      font-weight: bold;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    .action-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn-approve {
+      background-color: #2ec4b6;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 5px;
       cursor: pointer;
-      margin-bottom: 5px;
+      font-weight: bold;
+      flex: 1;
     }
 
-    .btn:hover {
-      background-color: #ff4d6d;
+    .btn-deny {
+      background-color: #e63946;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      flex: 1;
     }
 
-    img.thumbnail {
-      width: 70px;
-      height: 70px;
+    .btn-delete-active {
+      background-color: #fff;
+      color: #e63946;
+      border: 1px solid #e63946;
+      padding: 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: bold;
+      width: 100%;
+      transition: all 0.2s ease;
+    }
+
+    .btn-delete-active:hover {
+      background-color: #fff5f5;
+    }
+
+    .status-badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+
+    .status-approved { background-color: #d3f9df; color: #0f5132; }
+
+    .preview {
+      max-width: 100%;
+      max-height: 180px;
       object-fit: cover;
-      border-radius: 6px;
-      transition: transform 0.2s ease;
+      border-radius: 8px;
+      margin-top: 10px;
     }
 
-    img.thumbnail:hover {
-      transform: scale(2.5);
-      z-index: 1000;
-      position: relative;
-    }
-
-    td.description {
-      max-width: 250px;
-      word-wrap: break-word;
-      text-align: left;
-    }
-
-    @media (max-width: 768px) {
-      table, thead, tbody, th, td, tr {
-        display: block;
-      }
-      thead {
-        display: none;
-      }
-      tr {
-        margin-bottom: 1rem;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      }
-      td {
-        text-align: left;
-        padding: 1rem;
-        position: relative;
-      }
-      td::before {
-        content: attr(data-label);
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
-        font-weight: bold;
-        text-transform: uppercase;
-        color: #999;
-      }
+    .no-data {
+      color: #a0aec0;
+      font-style: italic;
+      text-align: center;
+      padding: 20px 0;
     }
   </style>
 </head>
 <body>
-  <header class="header">
-    <h1>Employee Dashboard</h1>
-    <nav>
-      <a href="{{ url_for('home') }}">Home</a>
-      <a href="{{ url_for('logout') }}">Logout</a>
-    </nav>
-  </header>
 
-  <div class="container">
-    <h2>Pending Cleaning Requests</h2>
-
-    {% if bookings %}
-      <table>
-        <thead>
-          <tr>
-            <th>Service</th>
-            <th>Customer</th>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Photo</th>
-            <th>Description</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for booking in bookings %}
-            <tr>
-              <td data-label="Service">{{ booking.service_type }}</td>
-              <td data-label="Customer">{{ booking.customer.username }}</td>
-              <td data-label="Date">{{ booking.date or 'N/A' }}</td>
-              <td data-label="Time">{{ booking.time or 'N/A' }}</td>
-              <td data-label="Photo">
-                {% if booking.photo_path %}
-                  <img src="{{ url_for('static', filename='uploads/' ~ booking.photo_path) }}" alt="Photo" class="thumbnail">
-                {% else %}
-                  No photo
-                {% endif %}
-              </td>
-              <td data-label="Description" class="description">{{ booking.description or 'No description' }}</td>
-              <td data-label="Status" class="{% if booking.status == 'pending' %}status-pending{% elif booking.status == 'approved' %}status-completed{% elif booking.status == 'denied' %}status-denied{% endif %}">
-                {{ booking.status.capitalize() }}
-              </td>
-              <td data-label="Actions">
-                {% if booking.status == 'pending' %}
-                  <form method="POST" action="{{ url_for('approve_request', request_id=booking.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn">Approve</button>
-                  </form>
-                  <form method="POST" action="{{ url_for('deny_request', request_id=booking.id) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <button type="submit" class="btn">Deny</button>
-                  </form>
-                {% else %}
-                  N/A
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>No pending requests right now.</p>
-    {% endif %}
+  <div class="header">
+    <h1>Employee Admin Workspace</h1>
+    <p>Logged in as: Staff Portal Account Management</p>
+    <a href="{{ url_for('home') }}" style="color: white; font-weight: bold; text-decoration: underline;">← Back to Home</a>
   </div>
+
+  <div class="dashboard">
+    <!-- LEFT PANEL: INCOMING REQUESTS -->
+    <div class="column-left">
+      <h2>Incoming Actions Required</h2>
+      
+      {% set pending_requests = requests | selectattr("status", "equalto", "pending") | list %}
+      {% if pending_requests %}
+        {% for request in pending_requests %}
+          <div class="request-card">
+            <span class="meta-info">NEW REQUEST</span>
+            <h3>{{ request.service_type }}</h3>
+            
+            <table class="tracking-data-table">
+              <tr>
+                <td class="label">Client Account ID:</td>
+                <td>#{{ request.customer_id }}</td>
+              </tr>
+              <tr>
+                <td class="label">Proposed Date:</td>
+                <td>{{ request.date }} at {{ request.time }}</td>
+              </tr>
+              <tr>
+                <td class="label">System Creation:</td>
+                <td>{{ request.created_at.strftime('%Y-%m-%d %H:%M') if request.created_at else 'N/A' }}</td>
+              </tr>
+              <tr>
+                <td class="label">Client Notes:</td>
+                <td>{{ request.description if request.description else 'None provided' }}</td>
+              </tr>
+            </table>
+            
+            {% if request.photo_path %}
+              <img class="preview" src="{{ url_for('static', filename='uploads/' + request.photo_path) }}" alt="Photo">
+            {% endif %}
+
+            <div class="action-group">
+              <form action="{{ url_for('approve_request', request_id=request.id) }}" method="POST" style="flex: 1;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-approve">Approve Task</button>
+              </form>
+              
+              <form action="{{ url_for('deny_request', request_id=request.id) }}" method="POST" style="flex: 1;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-deny">Deny</button>
+              </form>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-data">No work orders currently awaiting processing.</p>
+      {% endif %}
+    </div>
+
+    <!-- RIGHT PANEL: DETAILED AUDIT TRACKING AND ACTIVE SCHEDULES -->
+    <div class="column-right">
+      <h2>Active Tracking Data</h2>
+
+      {% set approved_requests = requests | selectattr("status", "equalto", "approved") | list %}
+      {% if approved_requests %}
+        {% for request in approved_requests %}
+          <div class="request-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span class="status-badge status-approved">Approved Order</span>
+              <span style="font-size: 0.8rem; color: #718096; font-family: monospace;">ID: #{{ request.id }}</span>
+            </div>
+            
+            <h3 style="margin: 4px 0 10px 0;">{{ request.service_type }}</h3>
+            
+            <!-- HIGH VALUE DEEP TRACKING DATA TABLE -->
+            <table class="tracking-data-table">
+              <tr>
+                <td class="label">Client ID:</td>
+                <td><strong>#{{ request.customer_id }}</strong></td>
+              </tr>
+              <tr>
+                <td class="label">Work Date:</td>
+                <td>{{ request.date }}</td>
+              </tr>
+              <tr>
+                <td class="label">Work Time:</td>
+                <td>{{ request.time }}</td>
+              </tr>
+              <tr>
+                <td class="label">Database Created:</td>
+                <td>{{ request.created_at.strftime('%m/%d/%y — %I:%M %p') if request.created_at else 'N/A' }}</td>
+              </tr>
+              <tr>
+                <td class="label">Image Attachment:</td>
+                <td>{{ 'Yes (See path below)' if request.photo_path else 'None Attached' }}</td>
+              </tr>
+              {% if request.photo_path %}
+              <tr>
+                <td class="label">Image File:</td>
+                <td style="word-break: break-all; font-size: 0.75rem; color: #a0aec0;">{{ request.photo_path }}</td>
+              </tr>
+              {% endif %}
+              <tr>
+                <td class="label">Scope/Description:</td>
+                <td>{{ request.description if request.description else 'No extra description added' }}</td>
+              </tr>
+            </table>
+            
+            {% if request.photo_path %}
+              <img class="preview" src="{{ url_for('static', filename='uploads/' + request.photo_path) }}" alt="Photo">
+            {% endif %}
+
+            <!-- MODIFIED REMOVAL ENGINE AREA -->
+            <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid #edf2f7;">
+              <form action="{{ url_for('delete_request', request_id=request.id) }}" method="POST" onsubmit="return confirm('CRITICAL ACTION: Are you sure you want to permanently erase this scheduled cleaning record from database tracking?');">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn-delete-active">
+                  Remove From Records
+                </button>
+              </form>
+            </div>
+
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="no-data">No active booking records found matching current data profiles.</p>
+      {% endif %}
+    </div>
+  </div>
+
 </body>
 </html>
