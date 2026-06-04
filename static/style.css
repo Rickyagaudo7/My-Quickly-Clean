@@ -4,42 +4,56 @@
 :root {
   /* Colors */
   --primary-pink: #ff6f91;
-  --primary-pink-dark: #e1485e;
+  --primary-pink-dark: #ff4d6d;
   --primary-green: #28a745;
   --primary-green-dark: #1e7e34;
   --bg-light: #f7f7f7;
   --text-dark: #333;
   --text-light: #fff;
   
-  /* Glassmorphism Theme Variables */
-  --card-bg: rgba(255, 255, 255, 0.4);
-  --card-bg-hover: rgba(255, 255, 255, 0.8);
-  --card-border: rgba(255, 255, 255, 0.25);
-  --card-border-hover: rgba(255, 255, 255, 0.6);
+  /* Semantic Theme Variables (Prevents dark mode breakdown) */
+  --card-bg: rgba(255, 255, 255, 0.5);
+  --card-bg-hover: rgba(255, 255, 255, 0.9);
+  --card-border: rgba(255, 255, 255, 0.3);
+  --card-border-hover: rgba(255, 255, 255, 0.7);
 
   /* Layout & Spacing */
   --spacing-small: 10px;
   --spacing-medium: 20px;
   --spacing-large: 30px;
-  --shadow-light: rgba(0, 0, 0, 0.08);
+  --shadow-light: rgba(0, 0, 0, 0.1);
   --shadow-hover: rgba(0, 0, 0, 0.15);
 }
 
+/* Dark Mode Support */
+body.dark-mode {
+  --bg-light: #121212;
+  --text-dark: #eee;
+  --text-light: #fff; /* Kept light for high contrast text elements */
+  --shadow-light: rgba(255, 255, 255, 0.1);
+  --shadow-hover: rgba(255, 255, 255, 0.15);
+  
+  /* Dark mode overrides for semantic tokens */
+  --card-bg: #1e1e1e;
+  --card-bg-hover: #252525;
+  --card-border: #333;
+  --card-border-hover: #444;
+}
+
 /* ==========================================================================
-   4. LAYOUT & BACKGROUNDS (Optimized Container)
+   2. BASE & RESET
    ========================================================================== */
-.container {
-  max-width: 800px;
-  margin: var(--spacing-medium) auto;
-  padding: var(--spacing-medium);
-  border-radius: 14px;
-  box-shadow: 0 6px 16px var(--shadow-light);
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: var(--bg-light);
   color: var(--text-dark);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  transition: box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 /* Core Accessibility Focus Ring Style */
